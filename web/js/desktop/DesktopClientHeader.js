@@ -23,6 +23,11 @@ function DesktopClientHeader() {
   BUS.on('api.user', function() {
      $(".navigation .userinfo").text("Hello " + API.user().name);
   }, this);
+  
+  BUS.on('connection.state', function(state) {
+    var online = state == 'online';
+    $rpcQueueState.addClass(online ? 'online' : 'offline')
+  });
 
   // Show a queue status
   var $rpcQueueState = $(".rpc_queue_state", this.e);

@@ -17,6 +17,9 @@
 	height: 13px;
 	display: inline-block;
 }
+#headline .offline {
+  background: red;
+}
 /* ------------------------------------------------------------------------- */
 
 #desktoploginview {

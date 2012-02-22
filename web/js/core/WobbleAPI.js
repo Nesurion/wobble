@@ -17,6 +17,7 @@ OfflineWrapper.prototype.doRPC = function(name, parameters, callback) {
       // If the wrapper is offline, we requeue
       if (err && err.error === 'connectionerr' && !that.online) {
         that.queue.push([name, parameters, callback]);
+        return true;
       } else {
         return callback.apply(window, arguments);
       }
@@ -28,20 +29,23 @@ OfflineWrapper.prototype.doRPC = function(name, parameters, callback) {
 OfflineWrapper.prototype.goOffline = function() {
   // New calls to doRPC are now queued. We still the failed request
   this.online = false;
+  BUS.fire('connection.state', 'offline');
 
   var that = this;
   setTimeout(function() {
     that.checkOnline();
   }, 100 + (this.retryCounter++) * 500);
-  this.retryCounter = Math.max(10, this.retryCounter);
+  this.retryCounter = Math.min(10, this.retryCounter);
 };
 OfflineWrapper.prototype.goOnline = function () {
   this.online = true;
 
   for (var i = 0; i < this.queue.length; i++) {
     var item = this.queue[i];
-    this.doRPC.apply(window, item);
+    this.doRPC.apply(this, item);
   }
+
+  BUS.fire('connection.state', 'online');  
 };
 
 
