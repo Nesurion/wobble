@@ -33,8 +33,9 @@ BasicClient.prototype.bootstrap = function() {
 
   // Initialize the API and app, when user data is loaded
   window.RPC = new JSONRPC('./api/endpoint.php');
+  var offlineWrapper = new OfflineWrapper(window.RPC);
   window.API = new WobbleAPI(
-    window.RPC,
+    offlineWrapper,
     function(user) {
       that.preinit(user);
     }

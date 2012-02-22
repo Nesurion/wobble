@@ -1,5 +1,60 @@
 "use strict";
 
+function OfflineWrapper(rpc) {
+  this.rpc = rpc;
+  this.online = true;
+  this.retryCounter = 0;
+  this.queue = [];
+  
+  BUS.on('rpc.connectionerror', function() {
+    this.goOffline();
+  }, this);
+};
+OfflineWrapper.prototype.doRPC = function(name, parameters, callback) {
+  var that = this;
+  if (this.online) {
+    this.rpc.doRPC(name, parameters, function(err) {
+      // If the wrapper is offline, we requeue
+      if (err && err.error === 'connectionerr' && !that.online) {
+        that.queue.push([name, parameters, callback]);
+      } else {
+        return callback.apply(window, arguments);
+      }
+    })
+  } else {
+    this.queue.push([name, parameters, callback]);
+  }
+};
+OfflineWrapper.prototype.goOffline = function() {
+  // New calls to doRPC are now queued. We still the failed request
+  this.online = false;
+
+  var that = this;
+  setTimeout(function() {
+    that.checkOnline();
+  }, 100 + (this.retryCounter++) * 500);
+  this.retryCounter = Math.max(10, this.retryCounter);
+};
+OfflineWrapper.prototype.goOnline = function () {
+  this.online = true;
+
+  for (var i = 0; i < this.queue.length; i++) {
+    var item = this.queue[i];
+    this.doRPC.apply(window, item);
+  }
+};
+
+
+OfflineWrapper.prototype.checkOnline = function() {
+  var that = this;
+  this.rpc.doRPC('wobble.api_version', function(err, result) {
+    if (err) {
+      that.goOffline();
+    } else {
+      that.goOnline();
+    }
+  });
+};
 
 // API Wrapper functions
 var WobbleAPI = function(rpc, callback) {
