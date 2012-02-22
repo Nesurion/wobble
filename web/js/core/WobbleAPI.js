@@ -7,6 +7,8 @@ function OfflineWrapper(rpc) {
   this.queue = [];
   
   BUS.on('rpc.connectionerror', function() {
+    if (!this.online)
+      return;
     this.goOffline();
   }, this);
 };
@@ -15,13 +17,13 @@ OfflineWrapper.prototype.doRPC = function(name, parameters, callback) {
   if (this.online) {
     this.rpc.doRPC(name, parameters, function(err) {
       // If the wrapper is offline, we requeue
-      if (err && err.error === 'connectionerr' && !that.online) {
+      if (err && err.error === 'connectionerror' || !that.online) {
         that.queue.push([name, parameters, callback]);
         return true;
       } else {
         return callback.apply(window, arguments);
       }
-    })
+    });
   } else {
     this.queue.push([name, parameters, callback]);
   }
@@ -44,6 +46,7 @@ OfflineWrapper.prototype.goOnline = function () {
     var item = this.queue[i];
     this.doRPC.apply(this, item);
   }
+  this.queue = [];
 
   BUS.fire('connection.state', 'online');  
 };
