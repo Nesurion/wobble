@@ -18,9 +18,9 @@ BasicClient.prototype.bootstrap = function() {
   BUS.on('rpc.error', function(err) {
     this.onRPCError(err);
   }, this);
-  BUS.on('rpc.connectionerror', function(err) {
-    this.onRPCError(err);
-  }, this);
+  //BUS.on('rpc.connectionerror', function(err) {
+  //  this.onRPCError(err);
+  //}, this);
 
   var that = this;
   $(window).bind('beforeunload', function() {
